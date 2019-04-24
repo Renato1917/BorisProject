@@ -1,18 +1,18 @@
 library(tidyverse)
 
 # Paths to inputs
-pathCenso1991 = "../Data/Censos/Censos/Censo1991.csv"
-pathCenso2001 = "../Data/Censos/Censos/Censo2001.csv"
-pathCenso2011 = "../Data/Censos/Censos/Censo2011.csv"
-pathTransform91_11 = "../Data/Censos/TransformFreg/Transform91_11.csv"
-pathTransform01_11 = "../Data/Censos/TransformFreg/Transform01_11.csv"
-pathCensoNUTS2011 = "../Data/Censos/Censos/CensoNUTS3_2011.csv"
-pathPopAgeNUTS2 = "../Data/EstimativasINE/Pop_Age_NUTS2.csv"
-pathBirths = "../Data/Births/Nados_vivos.csv"
-pathDeaths = "../Data/Deaths/Obitos.csv"
-pathNUTSIndex = "../Data/Index/NUTS_Index.csv"
+pathCenso1991 = "../../Data/Censos/Censos/Censo1991.csv"
+pathCenso2001 = "../../Data/Censos/Censos/Censo2001.csv"
+pathCenso2011 = "../../Data/Censos/Censos/Censo2011.csv"
+pathTransform91_11 = "../../Data/Censos/TransformFreg/Transform91_11.csv"
+pathTransform01_11 = "../../Data/Censos/TransformFreg/Transform01_11.csv"
+pathCensoNUTS2011 = "../../Data/Censos/Censos/CensoNUTS3_2011.csv"
+pathPopAgeNUTS2 = "../../Data/EstimativasINE/Pop_Age_NUTS2.csv"
+pathBirths = "../../Data/Births/Nados_vivos.csv"
+pathDeaths = "../../Data/Deaths/Obitos.csv"
+pathNUTSIndex = "../../Data/Index/NUTS_Index.csv"
 # Paths to outputs
-pathCensus_91_11 = "../Data/PreFormat/"
+pathCensus_91_11 = "../../Data/PreFormat/"
 
 # Read and prepar Census from INE data -----------------------------------------------
 
