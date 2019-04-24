@@ -16,7 +16,7 @@ df_Projection = ProjectNUTSYear(LifeTable = NetMig)
 Idade = levels(NetMig$AG)[6:17] #%>%
 # droplevels()
 
-load("../JMM/Data/InputData.RData")
+load("../../JMMData/Data/InputData.RData")
 df_InputData = df_InputData %>%
   filter(Year %in% c(1990:2010)) %>%
   select(AG:DM) %>%
