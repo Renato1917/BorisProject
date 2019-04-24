@@ -3,7 +3,7 @@ library(tidyverse)
 source("./Fun_LTinput.R")
 source("./Fun_Projection.R")
 
-NetMig = LTinput() %>%
+NetMig = LTinput(PreFormat = FALSE) %>%
   arrange(Year, NUTS3, Sex, AG)
 
 
