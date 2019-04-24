@@ -400,8 +400,9 @@ PTdeaths = function(){
 
 LTinput = function(PreFormat = TRUE){
   require(tidyverse)
+  DataFormat = PreFormat
   AGlevels = c(paste0("AG", c(0,1,seq(5,100,5))), "Total")
-  PTcensosAux = PTcensos(PreFormat = TRUE)
+  PTcensosAux = PTcensos(PreFormat = DataFormat)
   PTdeathsAux = PTdeaths()
   PTbirthsAux = PTbirths()
   LifeTable = bind_rows(PTcensosAux,
