@@ -56,13 +56,15 @@ df2array = function(DataFrame, Formula){
 
 data.DM = DM ~ AG + Sex + Year + NUTS3
 data.DMN = DMN ~ AG + Sex + Year + NUTS3
+data.CP = nCx ~ AG + Sex + Year + NUTS3
 
 DM = df2array(DataFrame = df_InputData, Formula = data.DM)
 DMN = df2array(DataFrame = df_InputData, Formula = data.DMN)
+CP = df2array(DataFrame = df_InputData, Formula = data.CP)
 
 # Input data --------------------------------------------------------------
 
-input.data = list(DMN = DMN)
+input.data = list(DMN = DMN, CP = CP)
 input.data$AG = nlevels(df_InputData$AG)
 input.data$Sex = nlevels(df_InputData$Sex)
 input.data$Year = nlevels(as.factor(df_InputData$Year))
@@ -78,6 +80,8 @@ Modelo = function(){
           # =====================================
           # LIKELIHOOD
           # =====================================
+          # OP[i,j,k,l] <- CP[i,j,k,l] * (1 + DMN.p[i,j,k,l])
+          # DMN.p[i,j,k,l] ~ dnorm(mu.M[i,j,k,l],tau.M[i,j])
           DMN[i,j,k,l] ~ dnorm(mu.M[i,j,k,l],tau.M[i,j])
           mu.M[i,j,k,l] <- Mgamma[i,j]
         } #NUTS3
@@ -120,7 +124,9 @@ inits = list(inits.data(i=1), inits.data(i=2), inits.data(i=3))
 
 parameters = c("Mgamma",
                "sigma.gamma",
-               "sigma.M")
+               "sigma.M"#,
+               # "DMN.p"
+)
 
 write.model(Modelo, paste0(WDir ,"Modelo.txt"))
 model.file = paste0(WDir ,"Modelo.txt")
@@ -132,11 +138,133 @@ Model = bugs(input.data,
              parameters,
              model.file,
              n.chains = 3,
-             n.iter = 60000, # 11000 60000
-             n.burnin = 10000, #1000 10000
+             n.iter = 11000, # 11000 60000
+             n.burnin = 1000, #1000 10000
              n.thin = 5,
              bugs.directory = Path2BUGS,
              codaPkg=TRUE,
              bugs.seed = 1,
              # debug=TRUE,
              working.directory = WDir)
+
+attach.all(Model$sims.list)
+
+
+# Data analysis -----------------------------------------------------------
+
+# Model.sim = read.bugs(c(paste0(WDir,"/coda1.txt"),
+#                         paste0(WDir,"/coda2.txt"),
+#                         paste0(WDir,"/coda3.txt")))
+# 
+# parameter_names = varnames(Model.sim)
+# 
+# library(tidybayes)
+# df_Parameters = Model.sim %>%
+#   spread_draws(Mgamma[AG,Sex], sigma.gamma[AG,Sex], sigma.M[AG,Sex]) %>%
+#   group_by(.iteration, AG, Sex) %>%
+#   summarize(Mgamma = mean(Mgamma),
+#             sigma.gamma = mean(sigma.gamma),
+#             sigma.M = mean(sigma.M))
+# 
+# df_DMN = Model.sim %>%
+#   spread_draws(DMN.p[AG,Sex, Year, NUTS3])
+# 
+AG = input.data$AG
+Sex = input.data$Sex
+Year = input.data$Year
+NUTS3 = input.data$NUTS3
+# 
+# 
+DMN.p = array(NA, c(2000, AG,Sex, Year, NUTS3))
+for(i in 1:2000){
+  DMN.p[i,,,,] = rnorm(AG*Sex*Year*NUTS3,
+                       Mgamma[i,,],
+                       sigma.M[i,,])
+}
+# df_DMN.p2 = DMN.p2 %>%
+#   spread_draws(DMN[AG,Sex,Year,NUTS3])
+#   
+#   as_tibble(DMN.p2)
+
+
+
+
+
+
+
+
+
+
+
+# DMN.p2 = rnorm(AG*Sex*Year*NUTS3, Mgamma[])
+
+
+# 
+# # attach.all(Model.sim$sims)
+# 
+# library(tidybayes)
+# df_Parameters = Model.sim %>%
+#   spread_draws(Mgamma[AG,Sex], sigma.gamma[AG,Sex], sigma.M[AG,Sex]) %>%
+#   group_by(AG,Sex) %>%
+#   summarize(
+#     MgammaoutI = quantile(Mgamma, 0.025),
+#     MgammainnI = quantile(Mgamma, 0.16),
+#     Mgammamean = quantile(Mgamma, 0.5),
+#     MgammainnS = quantile(Mgamma, 0.84),
+#     MgammaoutS = quantile(Mgamma, 0.975),
+#     #
+#     sigma.gammaoutI = quantile(sigma.gamma, 0.025),
+#     sigma.gammainnI = quantile(sigma.gamma, 0.16),
+#     sigma.gammamean = quantile(sigma.gamma, 0.5),
+#     sigma.gammainnS = quantile(sigma.gamma, 0.84),
+#     sigma.gammaoutS = quantile(sigma.gamma, 0.975),
+#     #
+#     sigma.MoutI = quantile(sigma.M, 0.025),
+#     sigma.MinnI = quantile(sigma.M, 0.16),
+#     sigma.Mmean = quantile(sigma.M, 0.5),
+#     sigma.MinnS = quantile(sigma.M, 0.84),
+#     sigma.MoutS = quantile(sigma.M, 0.975)
+#   ) %>%
+#   ungroup() %>%
+#   mutate(AG = factor(levels(df_InputData$AG)[AG]),
+#          Sex = factor(levels(df_InputData$Sex)[Sex]))
+# 
+# ####
+# library(ggstance)
+# tema <- theme(axis.line = element_line(colour = "black"),
+#               panel.grid.major = element_blank(),
+#               # panel.grid.major.y = element_line(colour = "black",
+#               #                                   linetype = "dashed"),
+#               panel.grid.minor = element_blank(),
+#               # panel.grid.minor.y = element_line(colour = "black",
+#               #                                   linetype = "dashed"),
+#               panel.border = element_blank(),
+#               panel.background = element_blank(),
+#               plot.title = element_text(family = "Trebuchet MS",
+#                                         color="#666666",
+#                                         face="bold",
+#                                         size=32,
+#                                         hjust=0)) +
+#   theme(axis.title = element_text(family = "Trebuchet MS",
+#                                   color="#666666",
+#                                   face="bold",
+#                                   size=18)) +
+#   theme(axis.text = element_text(color = "grey20",
+#                                  size = 12,
+#                                  angle = 0,
+#                                  hjust = .5,
+#                                  vjust = .5,
+#                                  face = "plain"))
+# ########
+# 
+# ggplot(df_Parameters, aes(x = Mgammamean, y = AG, color = Sex)) +
+#   geom_point(size = 2, position=position_dodgev(height=-2)) +
+#   geom_errorbarh(aes(xmin=MgammaoutI, xmax=MgammaoutS, width = 0), size = 0.5,
+#                  position=position_dodgev(height=-2)) +
+#   geom_errorbarh(aes(xmin=MgammainnI, xmax=MgammainnS, width = 0), size = 1,
+#                  position=position_dodgev(height=-2)) +
+#   scale_y_discrete(limits = rev(df_Parameters$AG)) +
+#   labs(title = expression(paste(delta, "M", " by age group")),
+#        x = expression(paste(delta, "M")),
+#        y = "Ages groups") +
+#   tema
