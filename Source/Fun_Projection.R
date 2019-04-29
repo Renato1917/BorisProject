@@ -102,7 +102,7 @@ Project = function(LifeTable, YearI, NUTS3I, Nproj = 20){
     mutate_all(funs(round(.)))
   
   df_project = LifeTable %>%
-    select(Year, NUTS3_DSG,NUTS3, Sex,AG) %>%
+    select(Year, Region, NUTS3_DSG,NUTS3, Sex,AG) %>%
     filter(AG != "AG1") %>%
     droplevels()
   df_project = bind_cols(df_project,df_nPx)
@@ -151,7 +151,7 @@ ProjectNUTSYear = function(LifeTable){
     for (j in Yearlevels){
       lt_projYear[[j]] = Project(df_LT, YearI = j, NUTS3I = i, Nproj) %>%
         select(-Year) %>%
-        gather(key = Year, value = nKx, -c(NUTS3_DSG:AG)) %>%
+        gather(key = Year, value = nKx, -c(Region,NUTS3_DSG:AG)) %>%
         mutate(nCx = nKx,
                nKx = ifelse(Year == (j + 10), 0, nKx),
                nCx = ifelse(Year == j, 0, nCx)
@@ -159,8 +159,9 @@ ProjectNUTSYear = function(LifeTable){
     }
     lt_projNUTS3[[i]] = lt_projYear %>% do.call(rbind,.)
   }
-  df_proj = lt_projNUTS3 %>% do.call(rbind,.) %>%
-    group_by(Year, Sex, NUTS3_DSG, NUTS3, AG) %>%
+  df_proj = lt_projNUTS3 %>%
+    do.call(rbind,.) %>%
+    group_by(Year, Sex,Region, NUTS3_DSG, NUTS3, AG) %>%
     summarize(nKx = sum(nKx),
               nCx = sum(nCx)) %>%
     arrange(Year, NUTS3, AG, Sex)
