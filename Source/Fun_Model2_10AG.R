@@ -22,7 +22,7 @@ Idade = paste0("AG", seq(0,75,5))
 Anos = c(2001,2011)
 
 df_InputData = df_Projection %>%
-  filter(Year %in% Anos & AG %in% Idade) %>%
+  filter(Year %in% Anos & AG %in% Idade & Region %in% c("A", "B", "C")) %>%
   droplevels() %>%
   mutate(DM = nKx - nCx,
          DMN =DM/nCx) %>%
@@ -69,6 +69,8 @@ input.data$AG = nlevels(df_InputData$AG)
 input.data$Sex = nlevels(df_InputData$Sex)
 input.data$Year = nlevels(as.factor(df_InputData$Year))
 input.data$NUTS3 = nlevels(df_InputData$NUTS3)
+input.data$Region = nlevels(df_InputData$Region)
+input.data$InN = c(rep(1, 8), rep(2, 11), rep(3, 9))
 
 # Model Building---------------------------------------------------------
 
@@ -83,14 +85,18 @@ Modelo = function(){
           OP[i,j,k,l] <- CP[i,j,k,l] * (1 + DMN.p[i,j,k,l])
           DMN.p[i,j,k,l] ~ dnorm(mu.M[i,j,k,l],tau.M[i,j])
           DMN[i,j,k,l] ~ dnorm(mu.M[i,j,k,l],tau.M[i,j])
-          mu.M[i,j,k,l] <- Mgamma[i,j]
+          mu.M[i,j,k,l] <- Mgamma[i,j,InN[l]]
         } #NUTS3
       } # Year
-      Mgamma[i,j] ~ dnorm(0.0,tau.gamma[i,j])
-      #
-      tau.gamma[i,j] ~ dgamma(0.000001,0.000001)
-      var.gamma[i,j] <- 1 / tau.gamma[i,j]
-      sigma.gamma[i,j] <- sqrt(var.gamma[i,j])
+      
+    #
+      for(k in 1:Region){
+        Mgamma[i,j,k] ~ dnorm(0.0,tau.gamma[i,j,k])
+        #
+        tau.gamma[i,j,k] ~ dgamma(0.000001,0.000001)
+        var.gamma[i,j,k] <- 1 / tau.gamma[i,j,k]
+        sigma.gamma[i,j,k] <- sqrt(var.gamma[i,j,k])
+      }
       #
       tau.M[i,j] ~ dgamma(0.001,0.001)
       var.M[i,j] <- 1 / tau.M[i,j]
@@ -105,13 +111,13 @@ Modelo = function(){
 inits.data <- function(i){
   AG <- nlevels(as.factor(df_InputData$AG))
   Sex <- nlevels(as.factor(df_InputData$Sex))
-  # NUTS2 <- nlevels(as.factor(df_InputData$NUTS2))
+  Region <- nlevels(as.factor(df_InputData$Region))
   NUTS3 <- nlevels(as.factor(df_InputData$NUTS3))
   Year <- 2
   
   # Migration
   set.seed(i)
-  tau.gamma = array(rgamma(AG*Sex, 1, 1), dim=c(AG,Sex))
+  tau.gamma = array(rgamma(AG*Sex*Region, 1, 1), dim=c(AG,Sex,Region))
   set.seed(i)
   tau.M = array(rgamma(AG*Sex, 1, 1), dim=c(AG,Sex))
   return(list(tau.gamma = tau.gamma,
@@ -194,8 +200,8 @@ Model.sim = read.bugs(c(paste0(WDir,"/coda1.txt"),
 # 
 library(tidybayes)
 df_Parameters = Model.sim %>%
-  spread_draws(Mgamma[AG,Sex], sigma.gamma[AG,Sex], sigma.M[AG,Sex]) %>%
-  group_by(AG,Sex) %>%
+  spread_draws(Mgamma[AG,Sex,Region], sigma.gamma[AG,Sex,Region]) %>%
+  group_by(AG,Sex,Region) %>%
   summarize(
     MgammaoutI = quantile(Mgamma, 0.025),
     MgammainnI = quantile(Mgamma, 0.16),
@@ -208,12 +214,12 @@ df_Parameters = Model.sim %>%
     sigma.gammamean = quantile(sigma.gamma, 0.5),
     sigma.gammainnS = quantile(sigma.gamma, 0.84),
     sigma.gammaoutS = quantile(sigma.gamma, 0.975),
-    #
-    sigma.MoutI = quantile(sigma.M, 0.025),
-    sigma.MinnI = quantile(sigma.M, 0.16),
-    sigma.Mmean = quantile(sigma.M, 0.5),
-    sigma.MinnS = quantile(sigma.M, 0.84),
-    sigma.MoutS = quantile(sigma.M, 0.975)
+    # #
+    # sigma.MoutI = quantile(sigma.M, 0.025),
+    # sigma.MinnI = quantile(sigma.M, 0.16),
+    # sigma.Mmean = quantile(sigma.M, 0.5),
+    # sigma.MinnS = quantile(sigma.M, 0.84),
+    # sigma.MoutS = quantile(sigma.M, 0.975)
   ) %>%
   ungroup() %>%
   mutate(AG = factor(levels(df_InputData$AG)[AG]),
@@ -257,4 +263,5 @@ ggplot(df_Parameters, aes(x = Mgammamean, y = AG, color = Sex)) +
   labs(title = expression(paste(delta, "M", " by age group")),
        x = expression(paste(delta, "M")),
        y = "Age groups") +
-  tema
+  tema +
+  facet_wrap(~ Region, scales = "free_y") #
