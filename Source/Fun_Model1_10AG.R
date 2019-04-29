@@ -81,7 +81,7 @@ Modelo = function(){
           # LIKELIHOOD
           # =====================================
           OP[i,j,k,l] <- CP[i,j,k,l] * (1 + DMN.p[i,j,k,l])
-          # DMN.p[i,j,k,l] ~ dnorm(mu.M[i,j,k,l],tau.M[i,j])
+          DMN.p[i,j,k,l] ~ dnorm(mu.M[i,j,k,l],tau.M[i,j])
           DMN[i,j,k,l] ~ dnorm(mu.M[i,j,k,l],tau.M[i,j])
           mu.M[i,j,k,l] <- Mgamma[i,j]
         } #NUTS3
@@ -142,7 +142,7 @@ Model = bugs(input.data,
              n.burnin = 1000, #1000 10000
              n.thin = 5,
              bugs.directory = Path2BUGS,
-             # codaPkg=TRUE,
+             codaPkg=TRUE,
              bugs.seed = 1,
              # debug=TRUE,
              working.directory = WDir)
@@ -153,39 +153,39 @@ Model = bugs(input.data,
 # Data analysis -----------------------------------------------------------
 
 
-AG = input.data$AG
-Sex = input.data$Sex
-Year = input.data$Year
-NUTS3 = input.data$NUTS3
-# # 
-# # 
-DMN.p = array(NA, c(2000, AG,Sex, Year, NUTS3))
-for(i in 1:2000){
-  DMN.p[i,,,,] = rnorm(AG*Sex*Year*NUTS3,
-                       Mgamma[i,,],
-                       sigma.M[i,,])
-}
-
-df_DMN.p = as_tibble(as.data.frame.table(DMN.p)) %>%
-  rename(Inter = Var1,
-         AG = Var2,
-         Sex = Var3,
-         Year = Var4,
-         NUTS3 = Var5,
-         DMN.p = Freq) %>%
-  group_by(AG, Sex, Year, NUTS3)  %>%
-  summarize(DMN.poutI = quantile(DMN.p, 0.025),
-            DMN.pinnI = quantile(DMN.p, 0.16),
-            DMN.pmean = quantile(DMN.p, 0.5),
-            DMN.pinnS = quantile(DMN.p, 0.84),
-            DMN.poutS = quantile(DMN.p, 0.975)) %>%
-  ungroup() %>%
-  mutate(AG = factor(levels(df_InputData$AG)[AG],
-                     levels = levels(df_InputData$AG)),
-         Sex = factor(levels(df_InputData$Sex)[Sex],
-                      levels = levels(df_InputData$Sex)))
-
-detach.all()
+# AG = input.data$AG
+# Sex = input.data$Sex
+# Year = input.data$Year
+# NUTS3 = input.data$NUTS3
+# # # 
+# # # 
+# DMN.p = array(NA, c(2000, AG,Sex, Year, NUTS3))
+# for(i in 1:2000){
+#   DMN.p[i,,,,] = rnorm(AG*Sex*Year*NUTS3,
+#                        Mgamma[i,,],
+#                        sigma.M[i,,])
+# }
+# 
+# df_DMN.p = as_tibble(as.data.frame.table(DMN.p)) %>%
+#   rename(Inter = Var1,
+#          AG = Var2,
+#          Sex = Var3,
+#          Year = Var4,
+#          NUTS3 = Var5,
+#          DMN.p = Freq) %>%
+#   group_by(AG, Sex, Year, NUTS3)  %>%
+#   summarize(DMN.poutI = quantile(DMN.p, 0.025),
+#             DMN.pinnI = quantile(DMN.p, 0.16),
+#             DMN.pmean = quantile(DMN.p, 0.5),
+#             DMN.pinnS = quantile(DMN.p, 0.84),
+#             DMN.poutS = quantile(DMN.p, 0.975)) %>%
+#   ungroup() %>%
+#   mutate(AG = factor(levels(df_InputData$AG)[AG],
+#                      levels = levels(df_InputData$AG)),
+#          Sex = factor(levels(df_InputData$Sex)[Sex],
+#                       levels = levels(df_InputData$Sex)))
+# 
+# detach.all()
 
 Model.sim = read.bugs(c(paste0(WDir,"/coda1.txt"),
                         paste0(WDir,"/coda2.txt"),
