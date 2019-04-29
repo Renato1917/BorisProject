@@ -80,8 +80,8 @@ Modelo = function(){
           # =====================================
           # LIKELIHOOD
           # =====================================
-          # OP[i,j,k,l] <- CP[i,j,k,l] * (1 + DMN.p[i,j,k,l])
-          # DMN.p[i,j,k,l] ~ dnorm(mu.M[i,j,k,l],tau.M[i,j])
+          OP[i,j,k,l] <- CP[i,j,k,l] * (1 + DMN.p[i,j,k,l])
+          DMN.p[i,j,k,l] ~ dnorm(mu.M[i,j,k,l],tau.M[i,j])
           DMN[i,j,k,l] ~ dnorm(mu.M[i,j,k,l],tau.M[i,j])
           mu.M[i,j,k,l] <- Mgamma[i,j]
         } #NUTS3
@@ -147,7 +147,7 @@ Model = bugs(input.data,
              # debug=TRUE,
              working.directory = WDir)
 
-attach.all(Model$sims.list)
+# attach.all(Model$sims.list)
 
 
 # Data analysis -----------------------------------------------------------
@@ -169,17 +169,17 @@ attach.all(Model$sims.list)
 # df_DMN = Model.sim %>%
 #   spread_draws(DMN.p[AG,Sex, Year, NUTS3])
 # 
-AG = input.data$AG
-Sex = input.data$Sex
-Year = input.data$Year
-NUTS3 = input.data$NUTS3
-# 
-# 
-DMN.p = array(NA, c(2000, AG,Sex, Year, NUTS3))
-for(i in 1:2000){
-  DMN.p[i,,,,] = rnorm(AG*Sex*Year*NUTS3,
-                       Mgamma[i,,],
-                       sigma.M[i,,])
+# AG = input.data$AG
+# Sex = input.data$Sex
+# Year = input.data$Year
+# NUTS3 = input.data$NUTS3
+# # 
+# # 
+# DMN.p = array(NA, c(2000, AG,Sex, Year, NUTS3))
+# for(i in 1:2000){
+#   DMN.p[i,,,,] = rnorm(AG*Sex*Year*NUTS3,
+#                        Mgamma[i,,],
+#                        sigma.M[i,,])
 }
 # df_DMN.p2 = DMN.p2 %>%
 #   spread_draws(DMN[AG,Sex,Year,NUTS3])
